@@ -2,6 +2,12 @@ from rest_framework import serializers
 from .models import *
 
 
+class CustomUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'password')
+        extra_kwargs = {'password': {'write_only': True, 'required':True}}
+
 class ProductsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Products
@@ -17,3 +23,14 @@ class ReviewsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reviews
         fields = '__all__'
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = '__all__'
+
+class OrderSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Order
+        fields = ('id','user', 'status', 'government', 'city', 'street', 'zip_code', 'phone_number', 'status', 'payment_status', 'order_date', 'total_amount', 'total_products')

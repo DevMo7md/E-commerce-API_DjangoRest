@@ -67,3 +67,46 @@ class Reviews(models.Model):
 
     class Meta:
         unique_together = ('user', 'product')
+
+
+# Order
+
+class OrderStatus(models.TextChoices):
+    PROCESSING = 'Processing'
+    SHIPPED = 'Shipped'
+    DELIVERED = 'Delivered'
+
+class PaymentStatus(models.TextChoices):
+    PAID = 'Paid'
+    UNPAID = 'Unpaid' 
+
+class Order(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=False, blank=False)
+    government = models.CharField(max_length= 200, null=True, blank=True)
+    city = models.CharField(max_length= 200, null=True, blank=True)
+    street = models.CharField(max_length= 200, null=True, blank=True)
+    zip_code = models.CharField(max_length= 10, null=True, blank=True)
+    phone_number = models.CharField(max_length= 15, null=True, blank=True)
+    status = models.CharField(max_length= 200, choices=OrderStatus.choices ,null=True, blank=True)
+    payment_status = models.CharField(max_length= 200, choices=PaymentStatus.choices,null=True, blank=True)
+    order_date = models.DateTimeField(auto_now_add=True)
+
+    def total_amount(self):
+        result = sum(item.quantity * item.product.price for item in self.orderitems.all())
+        return round(result, 2)
+    
+    def total_products(self):
+        
+        return list(self.orderitems.values('product', 'quantity'))
+
+    def __str__(self):
+        return f"{self.user.email} ~ {self.order_date} ~ {self.status} ~ {self.payment_status}"
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, null=False, blank=False, related_name='orderitems')
+    product = models.ForeignKey(Products, on_delete=models.CASCADE, null=False, blank=False)
+    quantity = models.IntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.order.status}: {self.product.name}~quantity:{self.quantity}"

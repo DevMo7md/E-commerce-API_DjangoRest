@@ -37,3 +37,5 @@ class CustomUserAdmin(UserAdmin):
 # تسجيل النموذج المخصص في لوحة الإدارة
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Reviews)
+admin.site.register(Order)
+admin.site.register(OrderItem)

@@ -14,4 +14,11 @@ urlpatterns = [
     # reviews
     path('reviews/', views.reviews),
     path('reviews/<int:pk>/', views.review),
+    # Orders
+    path('orders/', views.orders),
+    path('orders/<int:pk>/', views.order),
+    path('orderitems/', views.orderitems),
+    path('orderitems/<int:pk>/', views.orderitem),
+    #login and authorization
+    path('register/', views.register),
 ]
