@@ -8,6 +8,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.hashers import make_password
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import LimitOffsetPagination
+from .filtters import *
 # Create your views here.
 
 # products
@@ -15,8 +17,9 @@ from rest_framework.decorators import api_view, permission_classes
 @permission_classes([IsAuthenticated])
 def products(request):
     if request.method == 'GET':
-        products = Products.objects.all()
-        serializer = ProductsSerializer(products, many=True)
+        products = ProductsFilter(request.GET, queryset=Products.objects.all().order_by('id'))
+        # new products is filtered --> add .qs to it
+        serializer = ProductsSerializer(products.qs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
