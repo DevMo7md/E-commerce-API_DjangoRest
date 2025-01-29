@@ -1,15 +1,21 @@
 from django.shortcuts import render
 from .models import *
-from .serializers import ProductsSerializer, CategorySerializer, ReviewsSerializer, OrderSerializer, OrderItemSerializer, CustomUserSerializer
+from .serializers import ProductsSerializer, CategorySerializer, ReviewsSerializer, OrderSerializer, OrderItemSerializer, CustomUserSerializer, RegisterSerializer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.authtoken.models import Token
+from django.utils.crypto import get_random_string
+from django.core.mail import send_mail
 from django.contrib.auth.hashers import make_password
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.pagination import LimitOffsetPagination
 from .filtters import *
+from datetime import  timedelta   #datetime,
+from django.utils import timezone
+#from rest_framework.pagination import LimitOffsetPagination
+#from rest_framework.authtoken.models import Token
+
+
+
 # Create your views here.
 
 # products
@@ -170,14 +176,65 @@ def orderitem(request, pk=None):
 @permission_classes([AllowAny])
 def register(request):
     if request.method == 'POST':
-        serializer = CustomUserSerializer(data=request.data)
+        serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            if not CustomUser.objects.filter(username=request.data['email']).exists():
-                user = serializer.save()  
-                token, created = Token.objects.get_or_create(user=user)
-                return Response({"token": token.key, "user": serializer.data}, status=status.HTTP_201_CREATED)
+            if CustomUser.objects.filter(email=request.data['email']).exists():
+                return Response({"error": "email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+            if CustomUser.objects.filter(username=request.data['username']).exists():
+                return Response({"error": "username already exists"}, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+            response = {
+                "message": "user was created successfully",
+                "user": serializer.data # temporary
+            }
+            return Response(response, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def forgot_password(request):
+    if request.method == 'POST':
+        try:
+            user = CustomUser.objects.get(email=request.data['email'])
+        except CustomUser.DoesNotExist:
+            return Response({"error":"Your E-mail doesn't exist"})
+        token = get_random_string(40)
+        user.reset_password_token = token
+        user.reset_password_expires = timezone.now() + timedelta(minutes=5)
+        user.save()
+
+        link = f"http://127.0.0.1:8000/api/reset-password/{token}/"
+        body = f"Your link for reset your password : {link}"
+        send_mail(
+            'Reset Password',
+            body,
+            'from ecommerce',
+            [request.data["email"]],
+        )
+        return Response({"message": "Email was sent successfully"}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password(request, token=None):
+    if request.method == 'POST':
+        try:
+            user = CustomUser.objects.get(reset_password_token=token)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "Your token doesn't exist"})
+        if user.reset_password_expires < timezone.now():
+            return Response({"error": "Your token has expired"})
+        if request.data['password'] != request.data['confirmPassword']:
+            return Response({"error": "Passwords do not match"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            user.password = make_password(request.data['password'])
+            user.reset_password_token = None
+            user.reset_password_expires = None
+            user.save()
+            return Response({"message": "Password was reset successfully"}, status=status.HTTP_200_OK)
+        
 
 
 '''

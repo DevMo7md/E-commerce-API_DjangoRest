@@ -1,17 +1,31 @@
 from rest_framework import serializers
+from django.contrib.auth.hashers import make_password
 from .models import *
 
+
+class RegisterSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True, allow_blank=False)
+    email = serializers.EmailField(required=True, allow_blank=False)
+    first_name = serializers.CharField(required=True, allow_blank=False)
+    last_name = serializers.CharField(required=True, allow_blank=False)
+    password = serializers.CharField(write_only=True, required=True, allow_blank=False)
+    address = serializers.CharField(required=False, allow_blank=True)
+    phone_no = serializers.CharField(required=False, allow_blank=True)
+
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data['password'])
+        return CustomUser.objects.create(**validated_data)
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'password')
-        extra_kwargs = {'password': {'write_only': True, 'required':True}}
+        fields = ('username', 'email', 'first_name', 'last_name', 'password', 'address', 'phone_no')
+        
 
 class ProductsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Products
-        fields = ('id', 'seller', 'name', 'price', 'brand', 'description', 'image', 'category', 'stock', 'created_at', 'updated_at', 'num_ratings', 'avg_rating')
+        fields = ('id', 'seller', 'name', 'price', 'brand', 'description', 'image', 'category', 'stock', 'created_at', 'updated_at', 'num_ratings', 'avg_rating', 'all_reviews')
 
 
 class CategorySerializer(serializers.ModelSerializer):

@@ -10,6 +10,8 @@ class CustomUser(AbstractUser):
     email = models.EmailField(_('email address'), unique = True)
     address = models.CharField(max_length = 250, blank = True, null = True)
     phone_no = models.CharField(max_length = 15)
+    reset_password_token = models.CharField(max_length=45, blank = True, null = True)
+    reset_password_expires = models.DateTimeField(null=True, blank = True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
     def __str__(self):
@@ -53,6 +55,12 @@ class Products(models.Model):
             return 0
         result = sum(rating.rating for rating in ratings) / len(ratings)
         return round(result, 2)
+    
+    def all_reviews(self):
+        return [
+            {"rating": review.rating, "review": review.review, "user": review.user.username, "created_at": review.created_at}
+            for review in self.reviews.all()
+        ]
 
     def __str__(self):
         return f"{self.name} brand-{self.brand} stock-{self.stock}"

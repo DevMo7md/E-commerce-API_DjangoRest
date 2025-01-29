@@ -21,4 +21,6 @@ urlpatterns = [
     path('orderitems/<int:pk>/', views.orderitem),
     #login and authorization
     path('register/', views.register),
+    path('forgot-password/', views.forgot_password),
+    path('reset-password/<str:token>/', views.reset_password),
 ]
