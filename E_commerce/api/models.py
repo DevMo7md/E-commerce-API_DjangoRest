@@ -14,6 +14,16 @@ class CustomUser(AbstractUser):
     reset_password_expires = models.DateTimeField(null=True, blank = True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
+
+
+    def user_status(self):
+        if self.is_superuser:
+            return 'Admin'
+        elif self.is_staff and not self.is_superuser:
+            return 'Staff'
+        else:
+            return 'Customer'
+
     def __str__(self):
         return "{}".format(self.email)
 

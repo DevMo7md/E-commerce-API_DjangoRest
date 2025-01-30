@@ -23,4 +23,7 @@ urlpatterns = [
     path('register/', views.register),
     path('forgot-password/', views.forgot_password),
     path('reset-password/<str:token>/', views.reset_password),
+    # Users
+    path('user/', views.get_users),
+    path('user/<str:pk>/', views.get_user),
 ]

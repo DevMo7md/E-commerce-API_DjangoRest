@@ -8,7 +8,7 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True, allow_blank=False)
     first_name = serializers.CharField(required=True, allow_blank=False)
     last_name = serializers.CharField(required=True, allow_blank=False)
-    password = serializers.CharField(write_only=True, required=True, allow_blank=False)
+    password = serializers.CharField(write_only=True, required=True, allow_blank=False, min_length=8)
     address = serializers.CharField(required=False, allow_blank=True)
     phone_no = serializers.CharField(required=False, allow_blank=True)
 
@@ -19,7 +19,10 @@ class RegisterSerializer(serializers.Serializer):
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'first_name', 'last_name', 'password', 'address', 'phone_no')
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'password', 'address', 'phone_no', 'user_status')
+        extra_kwargs = {
+            'password': {'allow_blank': False, 'required':True, 'write_only':True},
+        }
         
 
 class ProductsSerializer(serializers.ModelSerializer):

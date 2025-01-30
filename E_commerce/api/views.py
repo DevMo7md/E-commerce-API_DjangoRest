@@ -9,14 +9,17 @@ from django.core.mail import send_mail
 from django.contrib.auth.hashers import make_password
 from rest_framework.decorators import api_view, permission_classes
 from .filtters import *
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from datetime import  timedelta   #datetime,
 from django.utils import timezone
+from rest_framework.views import APIView
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 #from rest_framework.pagination import LimitOffsetPagination
 #from rest_framework.authtoken.models import Token
 
-
-
 # Create your views here.
+
 
 # products
 @api_view(['GET'])
@@ -60,6 +63,27 @@ def category(request, pk):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 # Reviews
+review_schema = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID التقييم'),
+        'user': openapi.Schema(type=openapi.TYPE_OBJECT, description='صانع التقييم'),
+        'product': openapi.Schema(type=openapi.TYPE_OBJECT, description='المنتج المقييم'),
+        'rating': openapi.Schema(type=openapi.TYPE_NUMBER, description='درجة التقييم'),
+        'review': openapi.Schema(type=openapi.TYPE_STRING, description='التعليق'),
+        'created_at': openapi.Schema(type=openapi.TYPE_STRING, description='التاريخ'),
+    },
+)
+
+@swagger_auto_schema(
+    method='post',
+    request_body=ReviewsSerializer,  # استخدام الـ Serializer كـ Request Schema
+    responses={
+        200: review_schema,  # استخدام الـ Schema المخصص كـ Response
+        400: 'Bad Request',
+    },
+    operation_description="إنشاء منتج جديد",
+)
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def reviews(request):
@@ -97,6 +121,31 @@ def review(request, pk):
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+order_schema = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID الطلب'),
+        'user': openapi.Schema(type=openapi.TYPE_OBJECT, description='المستخدم اللذي قام بالطلب'),
+        'government': openapi.Schema(type=openapi.TYPE_STRING, description='المحافظة'),
+        'city': openapi.Schema(type=openapi.TYPE_STRING, description='المدينة'),
+        'street': openapi.Schema(type=openapi.TYPE_STRING, description='الشارع'),
+        'zip_code': openapi.Schema(type=openapi.TYPE_STRING, description='الرمز البريدي'),
+        'phone_number': openapi.Schema(type=openapi.TYPE_STRING, description='رقم الهاتف'),
+        'status': openapi.Schema(type=openapi.TYPE_STRING, description='الحالة'),
+        'payment_status': openapi.Schema(type=openapi.TYPE_STRING, description='حالة الدفع'), 
+        'order_date': openapi.Schema(type=openapi.TYPE_STRING, description='التاريخ'), 
+    },
+)
+
+@swagger_auto_schema(
+    method='post',
+    request_body=OrderSerializer,  # استخدام الـ Serializer كـ Request Schema
+    responses={
+        200: order_schema,  # استخدام الـ Schema المخصص كـ Response
+        400: 'Bad Request',
+    },
+    operation_description="إنشاء منتج جديد",
+)
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def orders(request):
@@ -134,6 +183,26 @@ def order(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     
+orderitem_schema = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID'),
+        'order': openapi.Schema(type=openapi.TYPE_OBJECT, description='اسم الطلب'),
+        'product': openapi.Schema(type=openapi.TYPE_OBJECT, description='المنتج المطلوب'),
+        'quantity': openapi.Schema(type=openapi.TYPE_INTEGER, description='الكمية'),
+    },
+)
+
+@swagger_auto_schema(
+    method='post',
+    request_body=OrderItemSerializer,  # استخدام الـ Serializer كـ Request Schema
+    responses={
+        200: orderitem_schema,  # استخدام الـ Schema المخصص كـ Response
+        400: 'Bad Request',
+    },
+    operation_description="إنشاء منتج جديد",
+)
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def orderitems(request):
@@ -171,7 +240,29 @@ def orderitem(request, pk=None):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 
+user_schema = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        'id': openapi.Schema(type=openapi.TYPE_STRING, description='ID المستخدم'),
+        'username': openapi.Schema(type=openapi.TYPE_STRING, description='اسم المستخدم'),
+        'email': openapi.Schema(type=openapi.TYPE_OBJECT, description='البريد الالكتروني'),
+        'first_name': openapi.Schema(type=openapi.TYPE_NUMBER, description='الاسم الاول'),
+        'last_name': openapi.Schema(type=openapi.TYPE_STRING, description='الاسم الاخير'),
+        'address': openapi.Schema(type=openapi.TYPE_OBJECT, description='العنوان'),
+        'phone_no': openapi.Schema(type=openapi.TYPE_STRING, description='رقم الهاتف'),
+        'user_status': openapi.Schema(type=openapi.TYPE_STRING, description='حالة المستخدم'),
+    },
+)
 
+@swagger_auto_schema(
+    method='post',
+    request_body=CustomUserSerializer,  # استخدام الـ Serializer كـ Request Schema
+    responses={
+        200: user_schema,  # استخدام الـ Schema المخصص كـ Response
+        400: 'Bad Request',
+    },
+    operation_description="إنشاء منتج جديد",
+)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
@@ -242,6 +333,35 @@ def reset_password(request, token=None):
 '''
 
 #products section
+product_schema = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID العنصر'),
+        'name': openapi.Schema(type=openapi.TYPE_STRING, description='اسم العنصر'),
+        'price': openapi.Schema(type=openapi.TYPE_NUMBER, description='سعر العنصر'),
+        'description': openapi.Schema(type=openapi.TYPE_STRING, description='وصف العنصر'),
+        'seller': openapi.Schema(type=openapi.TYPE_OBJECT, description='البائع (staff_user)'),
+        'brand': openapi.Schema(type=openapi.TYPE_STRING, description='الماركة'),
+        'category': openapi.Schema(type=openapi.TYPE_OBJECT, description='الصنف'),
+        'image': openapi.Schema(type=openapi.TYPE_FILE, description='صورة العنصر'),
+        'stock': openapi.Schema(type=openapi.TYPE_INTEGER, description='عدد المنتجات'), 
+        'created_at': openapi.Schema(type=openapi.TYPE_STRING, description='تاريخ الإضافة'), 
+        'updated_at': openapi.Schema(type=openapi.TYPE_STRING, description='تاريخ التعديل'),
+        'num_ratings': openapi.Schema(type=openapi.TYPE_INTEGER, description='عدد التقييمات'), 
+        'avg_rating': openapi.Schema(type=openapi.TYPE_NUMBER, description='متوسط التقييمات'), 
+        'all_reviews': openapi.Schema(type=openapi.TYPE_OBJECT, description='التقييمات و التعليقات'),
+    },
+)
+
+@swagger_auto_schema(
+    method='post',
+    request_body=ProductsSerializer,  # استخدام الـ Serializer كـ Request Schema
+    responses={
+        200: product_schema,  # استخدام الـ Schema المخصص كـ Response
+        400: 'Bad Request',
+    },
+    operation_description="إنشاء منتج جديد",
+)
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def create_product(request):
@@ -276,6 +396,23 @@ def update_product(request, pk=None):
 
 
 # category section
+category_schema = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID الفئة'),
+        'name': openapi.Schema(type=openapi.TYPE_STRING, description='اسم الفئة'),
+    },
+)
+
+@swagger_auto_schema(
+    method='post',
+    request_body=CategorySerializer,  # استخدام الـ Serializer كـ Request Schema
+    responses={
+        200: category_schema,  # استخدام الـ Schema المخصص كـ Response
+        400: 'Bad Request',
+    },
+    operation_description="إنشاء منتج جديد",
+)
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def create_category(request):
@@ -300,3 +437,22 @@ def update_category(request, pk):
     elif request.method == 'DELETE':
         category.delete()
         return Response({"message": "category deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def get_users(request):
+    if request.method == 'GET':
+        users = CustomUser.objects.all()
+        serializer = CustomUserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def get_user(request, pk=None):
+    try:
+        user = CustomUser.objects.get(id=pk)
+    except CustomUser.DoesNotExist:
+        return Response({"error":"user not found"}, status=status.HTTP_400_BAD_REQUEST)
+    serializer = CustomUserSerializer(user, many=False)
+    return Response(serializer.data, status=status.HTTP_200_OK)
