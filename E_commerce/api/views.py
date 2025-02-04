@@ -150,14 +150,14 @@ order_schema = openapi.Schema(
 @permission_classes([IsAuthenticated])
 def orders(request):
     if request.method == 'POST':
-        serializer = OrderSerializer(data=request.data)
+        serializer = OrderSerializer(data=request.data, context={'user': request.user})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)    
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     elif request.method == 'GET':
-        orders = Order.objects.all()
+        orders = Order.objects.filter(user=request.user)
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -180,7 +180,7 @@ def order(request, pk):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     elif request.method == 'DELETE':
         order.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'Order has been deleted'}, status=status.HTTP_204_NO_CONTENT)
 
     
 orderitem_schema = openapi.Schema(
@@ -237,7 +237,7 @@ def orderitem(request, pk=None):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     elif request.method == 'DELETE':
         orderitem.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'Order has been deleted'}, status=status.HTTP_204_NO_CONTENT)
     
 
 user_schema = openapi.Schema(
@@ -456,3 +456,18 @@ def get_user(request, pk=None):
         return Response({"error":"user not found"}, status=status.HTTP_400_BAD_REQUEST)
     serializer = CustomUserSerializer(user, many=False)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['PUT'])
+@permission_classes([IsAdminUser])
+def update_order_status(request, pk):
+    try:
+        order = Order.objects.get(id=pk)
+    except Order.DoesNotExist:
+        return Response({"error":"order not found"}, status=status.HTTP_400_BAD_REQUEST)
+    if request.method == 'PUT':
+        order.status = request.data['status']
+        order.save()
+        serializer = OrderSerializer(order, many=False)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+

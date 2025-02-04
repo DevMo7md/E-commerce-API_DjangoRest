@@ -28,7 +28,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class ProductsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Products
-        fields = ('id', 'seller', 'name', 'price', 'brand', 'description', 'image', 'category', 'stock', 'created_at', 'updated_at', 'num_ratings', 'avg_rating', 'all_reviews')
+        fields = ('id', 'seller', 'name', 'price', 'brand', 'description', 'image', 'category', 'stock', 'created_at', 'updated_at', 'num_ratings', 'avg_rating', 'all_reviews','sale' ,'price_after_sale')
 
 
 class CategorySerializer(serializers.ModelSerializer):

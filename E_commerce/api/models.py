@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import post_save, pre_delete
+from django.dispatch import receiver
 from django.contrib.auth.models import User, AbstractUser
 from django.utils.translation import gettext_lazy as _
 import uuid
@@ -49,6 +51,7 @@ class Products(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=50)
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    sale = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
     brand = models.CharField(max_length=100)
     description = models.TextField()
     image = models.ImageField(upload_to='product_images/', blank=True, null=True)
@@ -57,6 +60,11 @@ class Products(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def price_after_sale(self):
+        if self.sale is not None and self.sale != 0:
+            return self.price - (self.price * self.sale / 100)
+        else:
+            return self.price
     def num_ratings(self):
         return self.reviews.count()
     def avg_rating(self):
@@ -71,6 +79,7 @@ class Products(models.Model):
             {"rating": review.rating, "review": review.review, "user": review.user.username, "created_at": review.created_at}
             for review in self.reviews.all()
         ]
+    
 
     def __str__(self):
         return f"{self.name} brand-{self.brand} stock-{self.stock}"
@@ -126,5 +135,24 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Products, on_delete=models.CASCADE, null=False, blank=False)
     quantity = models.IntegerField(default=1)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        post_save.connect(update_product_stock, sender=OrderItem)
+
+
     def __str__(self):
         return f"{self.order.status}: {self.product.name}~quantity:{self.quantity}"
+
+@receiver(post_save, sender=OrderItem)
+def update_product_stock(sender, instance, created, **kwargs):
+    if created:
+        product = instance.product
+        product.stock -= instance.quantity
+        product.save()
+    
+@receiver(pre_delete, sender=OrderItem)
+def restore_product_stock(sender, instance, **kwargs):
+
+    product = instance.product
+    product.stock += instance.quantity
+    product.save()

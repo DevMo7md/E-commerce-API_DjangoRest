@@ -19,6 +19,7 @@ urlpatterns = [
     path('orders/<int:pk>/', views.order),
     path('orderitems/', views.orderitems),
     path('orderitems/<int:pk>/', views.orderitem),
+    path('update-order-status/<int:pk>/', views.update_order_status),
     #login and authorization
     path('register/', views.register),
     path('forgot-password/', views.forgot_password),
