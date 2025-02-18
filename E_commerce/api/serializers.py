@@ -16,6 +16,12 @@ class RegisterSerializer(serializers.Serializer):
         validated_data['password'] = make_password(validated_data['password'])
         return CustomUser.objects.create(**validated_data)
 
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True, allow_blank=False)
+    password = serializers.CharField(write_only=True, required=True, allow_blank=False)
+
+
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser

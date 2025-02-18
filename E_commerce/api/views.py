@@ -1,6 +1,7 @@
 from django.shortcuts import render
+from django.contrib.auth import authenticate
 from .models import *
-from .serializers import ProductsSerializer, CategorySerializer, ReviewsSerializer, OrderSerializer, OrderItemSerializer, CustomUserSerializer, RegisterSerializer
+from .serializers import ProductsSerializer, CategorySerializer, ReviewsSerializer, OrderSerializer, OrderItemSerializer, CustomUserSerializer, RegisterSerializer, LoginSerializer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -10,6 +11,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework.decorators import api_view, permission_classes
 from .filtters import *
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import  timedelta   #datetime,
 from django.utils import timezone
 from rest_framework.views import APIView
@@ -256,12 +258,12 @@ user_schema = openapi.Schema(
 
 @swagger_auto_schema(
     method='post',
-    request_body=CustomUserSerializer,  # استخدام الـ Serializer كـ Request Schema
+    request_body=RegisterSerializer,  # استخدام الـ Serializer كـ Request Schema
     responses={
         200: user_schema,  # استخدام الـ Schema المخصص كـ Response
         400: 'Bad Request',
     },
-    operation_description="إنشاء منتج جديد",
+    operation_description="إنشاء مستخدم جديد",
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -282,6 +284,44 @@ def register(request):
             return Response(response, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+
+user_schema = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        'email': openapi.Schema(type=openapi.TYPE_OBJECT, description='البريد الالكتروني'),
+        'password': openapi.Schema(type=openapi.TYPE_STRING, description='كلمة المرور'),},
+)
+
+@swagger_auto_schema(
+    method='post',
+    request_body=LoginSerializer,  # استخدام الـ Serializer كـ Request Schema
+    responses={
+        200: user_schema,  # استخدام الـ Schema المخصص كـ Response
+        400: 'Bad Request',
+    },
+    operation_description="تسجيل دخول للمستخدم",
+)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_user(request):
+    if request.method == 'POST':
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = authenticate(email=request.data['email'], password=request.data['password'])
+            if user is not None:
+                refresh = RefreshToken.for_user(user)
+                user_serializer = CustomUserSerializer(user)
+                return Response({
+                    'user': user_serializer.data,
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    }, status=status.HTTP_200_OK
+                    )
+            else:
+                return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
